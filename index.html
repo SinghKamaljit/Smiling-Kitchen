@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smiling Kitchen</title>
+    <style>
+        /* --- DESIGN SYSTEM & CSS VARIABLES --- */
+        :root {
+            --color-cream: #FDFBF7;
+            --color-warm-white: #FFFFFF;
+            --color-soft-brown: #8E7F73;
+            --color-light-green: #E8F0EC;
+            --color-dark-green: #2C5E43;
+            --color-text-dark: #3A3530;
+            --color-text-muted: #6E655F;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-sm: 0 4px 12px rgba(142, 127, 115, 0.08);
+            --shadow-md: 0 8px 24px rgba(142, 127, 115, 0.12);
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* --- BASE STYLES --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--color-cream);
+            color: var(--color-text-dark);
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- APP CONTAINER (Mobile First) --- */
+        #app-container {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--color-cream);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding-bottom: 90px; /* Space for bottom nav */
+        }
+
+        /* --- SCREENS CONFIGURATION --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            padding: 24px;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .screen.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- TYPOGRAPHY & COMPONENTS --- */
+        h1 { font-weight: 700; color: var(--color-dark-green); font-size: 2rem; text-align: center; margin-bottom: 4px; }
+        h2 { font-weight: 600; color: var(--color-dark-green); font-size: 1.5rem; margin-bottom: 16px; }
+        p { color: var(--color-text-muted); font-size: 1rem; }
+        .subtitle { text-align: center; font-style: italic; color: var(--color-soft-brown); margin-bottom: 24px; font-size: 0.95rem; }
+        
+        .card {
+            background: var(--color-warm-white);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(142, 127, 115, 0.05);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            background-color: var(--color-dark-green);
+            color: var(--color-warm-white);
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 16px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(44, 94, 67, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: var(--color-light-green);
+            color: var(--color-dark-green);
+            box-shadow: none;
+            margin-top: 12px;
+        }
+
+        /* --- NAVIGATION BAR --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(142, 127, 115, 0.1);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            padding: 12px 8px calc(12px + env(safe-area-inset-bottom, 0px)) 8px;
+            z-index: 1000;
+        }
+
+        /* Slim scroll-position indicator — a quiet "there's more below" cue, only shown when the
+           active screen is actually taller than the viewport. */
+        .scroll-indicator-track {
+            position: fixed;
+            top: 16px;
+            right: 6px;
+            bottom: 106px;
+            width: 4px;
+            border-radius: 999px;
+            background: rgba(142, 127, 115, 0.15);
+            z-index: 999;
+            display: none;
+            pointer-events: none;
+        }
+        .scroll-indicator-thumb {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-radius: 999px;
+            background: var(--color-dark-green);
+            opacity: 0.55;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            color: var(--color-soft-brown);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            gap: 4px;
+            transition: var(--transition);
+        }
+
+        .nav-item.active {
+            color: var(--color-dark-green);
+            font-weight: 700;
+        }
+
+        .nav-icon {
+            font-size: 1.4rem;
+        }
+
+        /* --- HOME SCREEN SPECIFICS --- */
+        .logo-container {
+            text-align: center;
+            margin: 20px 0 10px 0;
+        }
+
+        .logo-icon {
+            font-size: 4rem;
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-icon:active {
+            transform: scale(0.9);
+        }
+
+        .greeting {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+            color: var(--color-text-dark);
+        }
+
+        /* Feelings Grid */
+        .feelings-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .feeling-card {
+            background: var(--color-warm-white);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feeling-card .emoji { font-size: 1.8rem; }
+        .feeling-card .label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); }
+
+        .feeling-card.active {
+            border-color: var(--color-dark-green);
+            background-color: var(--color-light-green);
+        }
+        .feeling-card.active .label { color: var(--color-dark-green); }
+
+        /* Growing heart — visual-only expression of chosen mood, no fixed money meaning */
+        .growth-heart {
+            font-size: 1rem;
+            line-height: 1;
+            transition: font-size 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            opacity: 0.5;
+        }
+        .feeling-card[data-feeling="white"] .growth-heart { font-size: 1rem; }
+        .feeling-card[data-feeling="green"] .growth-heart { font-size: 1.4rem; }
+        .feeling-card[data-feeling="smiley"] .growth-heart { font-size: 1.9rem; }
+        .feeling-card.active .growth-heart {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* Hidden admin trigger — folded hands, tap thrice to unlock host settings */
+        .admin-trigger {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 1.1rem;
+            opacity: 0.35;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px;
+        }
+
+        /* Simple back link reused on flow-ending screens */
+        .flow-back-btn {
+            background: none;
+            border: none;
+            color: var(--color-soft-brown);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Timeline items become tappable for edit */
+        .timeline-item.editable { cursor: pointer; }
+        .timeline-item.editable:active { opacity: 0.8; }
+
+        .timeline-edit-panel {
+            background: var(--color-cream);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin: -8px 0 20px 0;
+            border: 1px solid rgba(142, 127, 115, 0.15);
+        }
+        .timeline-edit-panel .edit-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .timeline-edit-panel .edit-row span {
+            font-weight: 700;
+            color: var(--color-dark-green);
+            font-size: 1.1rem;
+        }
+        .timeline-edit-panel input[type="number"] {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid rgba(142, 127, 115, 0.3);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-family: var(--font-family);
+            background: var(--color-warm-white);
+        }
+        .timeline-edit-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .timeline-edit-actions button {
+            flex: 1;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .btn-edit-save { background: var(--color-dark-green); color: var(--color-warm-white); }
+        .btn-edit-delete { background: #FCE4D6; color: #C0392B; }
+        .btn-edit-cancel { background: var(--color-light-green); color: var(--color-dark-green); }
+
+        /* Contribution Slider */
+        .slider-box {
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        .smile-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-dark-green);
+            margin: 12px 0;
+        }
+
+        .slider-caption {
+            font-size: 0.8rem;
+            color: var(--color-soft-brown);
+            font-style: italic;
+            min-height: 1.2em;
+            margin-bottom: 4px;
+        }
+
+        /* Track wrap holds the visual growing bar behind an invisible interactive range input */
+        .stem-track-wrap {
+            position: relative;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .stem-bar {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 999px;
+            background: #CFE8D9;
+            transition: height 0.15s ease, background-color 0.15s ease;
+            pointer-events: none;
+        }
+
+        .range-slider {
+            position: relative;
+            z-index: 2;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 44px;
+            background: transparent;
+            outline: none;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .range-slider::-webkit-slider-runnable-track {
+            background: transparent;
+            height: 44px;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--color-dark-green);
+            cursor: pointer;
+            border: 3px solid var(--color-warm-white);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+            margin-top: -2px;
+            position: relative;
+            z-index: 3;
+        }
+        .range-slider::-webkit-slider-thumb:active {
+            transform: scale(1.2);
+        }
+
+        .range-slider::-moz-range-track {
+            background: transparent;
+            height: 44px;
+            border: none;
+        }
+        .range-slider::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--color-dark-green);
+            cursor: pointer;
+            border: 3px solid var(--color-warm-white);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* --- MY STAY TIMELINE --- */
+        .timeline {
+            margin-top: 16px;
+            position: relative;
+            padding-left: 20px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: var(--color-light-green);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 8px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--color-dark-green);
+        }
+        .timeline-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .timeline-date { font-size: 0.8rem; color: var(--color-soft-brown); }
+        .timeline-feeling { font-size: 0.9rem; font-weight: 500; }
+        .timeline-time { font-size: 0.75rem; color: var(--color-soft-brown); }
+        .timeline-amount { font-weight: 600; color: var(--color-dark-green); }
+
+        .timeline-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 20px 0 10px -20px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(142, 127, 115, 0.2);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--color-dark-green);
+        }
+        .timeline-day-header:first-child { margin-top: 0; }
+        .timeline-day-subtotal {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--color-soft-brown);
+        }
+
+        .total-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 2px dashed var(--color-light-green);
+        }
+
+        /* --- KITCHEN PHILOSOPHY --- */
+        .philosophy-text {
+            text-align: center;
+            font-size: 1.2rem;
+            line-height: 2;
+            color: var(--color-text-dark);
+            font-style: italic;
+        }
+        .philosophy-text p {
+            margin-bottom: 24px;
+            color: var(--color-text-dark);
+        }
+
+        /* --- FAREWELL & QR --- */
+        .qr-container {
+            text-align: center;
+            margin: 24px 0;
+        }
+        .qr-placeholder {
+            width: 200px;
+            height: 200px;
+            background: #EEE;
+            margin: 0 auto 16px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            border: 2px dashed var(--color-soft-brown);
+            overflow: hidden;
+        }
+        .qr-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- SETTINGS FORM --- */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--color-text-dark);
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(142, 127, 115, 0.3);
+            border-radius: var(--radius-md);
+            outline: none;
+            font-size: 1rem;
+            font-family: var(--font-family);
+            background-color: var(--color-cream);
+        }
+        .form-group input:focus {
+            border-color: var(--color-dark-green);
+        }
+        .settings-back-btn {
+            background: none;
+            border: none;
+            color: var(--color-dark-green);
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* --- NOTIFICATION BANNER --- */
+        .notification {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 48px);
+            max-width: 432px;
+            background-color: var(--color-dark-green);
+            color: var(--color-warm-white);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            z-index: 2000;
+            text-align: center;
+            font-weight: 500;
+            transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .notification.show { top: 24px; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div class="scroll-indicator-track" id="scroll-indicator-track">
+            <div class="scroll-indicator-thumb" id="scroll-indicator-thumb"></div>
+        </div>
+
+        <!-- Notification Banner -->
+        <div id="notification-banner" class="notification"></div>
+
+        <!-- 1. HOME SCREEN -->
+        <main id="screen-home" class="screen active">
+            <div class="logo-container">
+                <div id="logo" class="logo-icon">🍳</div>
+            </div>
+            <h1 id="home-title">Smiling Kitchen</h1>
+            <p id="home-subtitle" class="subtitle">"The kitchen doesn't keep accounts. It keeps memories."</p>
+            
+            <p id="home-greeting" class="greeting">Hi! How is the kitchen smiling today?</p>
+
+            <div class="feelings-container">
+                <div class="feeling-card" id="feel-white" data-feeling="white">
+                    <span class="emoji">🤍</span>
+                    <span class="label" id="label-white">Chai & Kindness</span>
+                    <span class="growth-heart">❤️</span>
+                </div>
+                <div class="feeling-card" id="feel-green" data-feeling="green">
+                    <span class="emoji">💚</span>
+                    <span class="label" id="label-green">Dal-Roti Energy</span>
+                    <span class="growth-heart">❤️</span>
+                </div>
+                <div class="feeling-card" id="feel-smiley" data-feeling="smiley">
+                    <span class="emoji">😊</span>
+                    <span class="label" id="label-smiley">Had a Pleasant Stay</span>
+                    <span class="growth-heart">❤️</span>
+                </div>
+            </div>
+
+            <div class="card slider-box">
+                <p>Today's Kitchen Smile</p>
+                <div class="smile-display" id="smile-amount-display">₹300</div>
+                <p class="slider-caption" id="slider-caption">Every bit helps it grow 🌱</p>
+                <div class="stem-track-wrap">
+                    <div class="stem-bar" id="stem-bar"></div>
+                    <input type="range" id="contribution-slider" class="range-slider">
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--color-soft-brown);">
+                    <span id="slider-min-lbl">₹50</span>
+                    <span id="slider-max-lbl">₹2000</span>
+                </div>
+            </div>
+
+            <button id="btn-submit-contribution" class="btn">❤️ Warm Today's Kitchen</button>
+
+            <div id="admin-trigger" class="admin-trigger">🙏</div>
+        </main>
+
+        <!-- 2. MY STAY SCREEN -->
+        <section id="screen-mystay" class="screen">
+            <h2>My Stay</h2>
+            <div class="card">
+                <div class="timeline" id="stay-timeline">
+                    <!-- Timeline items generated dynamicly -->
+                </div>
+                <div class="total-box">
+                    <span style="font-weight: 600;">Total Gratitude</span>
+                    <span id="stay-total-amount" style="font-size: 1.4rem; font-weight: 700; color: var(--color-dark-green);">₹0</span>
+                </div>
+            </div>
+            <p style="text-align:center; font-size: 0.8rem; color: var(--color-soft-brown); font-style: italic;">Tap any day to edit or remove it.</p>
+        </section>
+
+        <!-- 3. KITCHEN PHILOSOPHY SCREEN -->
+        <section id="screen-philosophy" class="screen">
+            <h2>Kitchen Philosophy</h2>
+            <div class="card philosophy-text">
+                <p>Hospitality is not a bill.<br>It's a rhythm.</p>
+                <p>The kitchen doesn't keep accounts.<br>It keeps memories.</p>
+                <p>Guests contribute because they want to.</p>
+                <p>Hosts never ask.</p>
+                <p>Everyone keeps smiling.</p>
+            </div>
+        </section>
+
+        <!-- 4. TIME TO SAY GOODBYE SCREEN -->
+        <section id="screen-goodbye" class="screen">
+            <h2>Time to Say Goodbye</h2>
+            <div class="card" style="text-align: center; padding: 40px 24px;">
+                <span style="font-size: 3rem; display: block; margin-bottom: 16px;">🌱</span>
+                <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 24px; color: var(--color-text-dark);">Are you leaving today?</p>
+                <button id="btn-goodbye-continue" class="btn">Continue</button>
+                <button id="btn-goodbye-cancel" class="btn btn-secondary">Not Yet</button>
+            </div>
+        </section>
+
+        <!-- 5. FAREWELL SCREEN -->
+        <section id="screen-farewell" class="screen">
+            <button id="btn-farewell-back" class="flow-back-btn">← Not yet</button>
+            <div class="card" style="text-align: center; padding: 32px 24px;">
+                <span style="font-size: 3rem; display: block; margin-bottom: 12px;">🏡</span>
+                <h2 style="color: var(--color-dark-green); margin-bottom: 8px;">Thank You</h2>
+                <p class="subtitle" style="margin-bottom: 24px;">for being part of our home.</p>
+
+                <div style="display: flex; justify-content: space-around; margin-bottom: 24px; text-align: center; background: var(--color-cream); padding: 16px; border-radius: var(--radius-md);">
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--color-soft-brown);">Days</span>
+                        <div id="farewell-days" style="font-weight: 700; color: var(--color-text-dark);">0</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--color-soft-brown);">Total</span>
+                        <div id="farewell-total" style="font-weight: 700; color: var(--color-dark-green);">₹0</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--color-soft-brown);">Avg/Day</span>
+                        <div id="farewell-avg" style="font-weight: 700; color: var(--color-text-dark);">₹0</div>
+                    </div>
+                </div>
+
+                <div class="qr-container">
+                    <p style="font-size: 0.85rem; margin-bottom: 8px; font-weight: 600;">Scan to Contribute</p>
+                    <div class="qr-placeholder">
+                        <img id="host-qr-display" src="" alt="Host UPI QR Code" style="display:none;">
+                        <span id="farewell-qr-fallback">Scan Host QR Code</span>
+                    </div>
+                    <a id="btn-save-qr" class="btn btn-secondary" style="display:none; margin-top:10px; padding:10px; font-size:0.85rem; text-decoration:none;" download="payment-qr.png">⬇️ Save QR to Gallery</a>
+                    <p id="host-upi-display" style="font-size: 0.85rem; color: var(--color-soft-brown); font-family: monospace;"></p>
+                </div>
+
+                <button id="btn-complete-payment" class="btn">🙏 Thank the Kitchen</button>
+                <p style="font-size: 0.8rem; color: var(--color-soft-brown); margin-top: 16px; font-style: italic;">"The kitchen never asked. Thank you for giving back."</p>
+            </div>
+        </section>
+
+        <!-- 6. FINAL THANK YOU SCREEN -->
+        <section id="screen-thankyou" class="screen" style="text-align: center; justify-content: center; padding-top: 60px;">
+            <div class="card" style="padding: 40px 24px;">
+                <span style="font-size: 4rem; display: block; margin-bottom: 16px;">✨</span>
+                <h2>Thank You.</h2>
+                <p style="margin-bottom: 8px; font-size: 1.1rem;">Have a safe journey.</p>
+                <p style="color: var(--color-soft-brown);">Come back soon.</p>
+                <button id="btn-final-restart" class="btn btn-secondary" style="margin-top: 40px;">Return Home</button>
+            </div>
+        </section>
+
+        <!-- 7. HOST SETTINGS SCREEN (HIDDEN SECTOR) -->
+        <section id="screen-settings" class="screen">
+            <button id="btn-settings-back" class="settings-back-btn">← Back to Kitchen</button>
+            <h2>Host Settings</h2>
+            
+            <div class="card">
+                <div class="form-group">
+                    <label for="set-host-name">Host Name</label>
+                    <input type="text" id="set-host-name">
+                </div>
+                <div class="form-group">
+                    <label for="set-house-name">House/Kitchen Name</label>
+                    <input type="text" id="set-house-name">
+                </div>
+                <div class="form-group">
+                    <label for="set-upi-id">UPI ID</label>
+                    <input type="text" id="set-upi-id" placeholder="e.g. host@upi">
+                </div>
+                <div class="form-group">
+                    <label for="set-qr-upload">Your Payment QR (upload a photo/screenshot)</label>
+                    <input type="file" id="set-qr-upload" accept="image/*">
+                </div>
+                <div class="qr-container" id="qr-preview-wrap" style="display:none; margin: 8px 0;">
+                    <div class="qr-placeholder" style="width:120px; height:120px;">
+                        <img id="qr-preview-img" src="" alt="QR preview">
+                    </div>
+                    <button type="button" id="btn-clear-qr" class="btn btn-secondary" style="margin-top:8px; padding: 8px; font-size:0.8rem;">Remove QR</button>
+                </div>
+                <div class="form-group">
+                    <label for="set-qr-url">Or paste a QR Image URL</label>
+                    <input type="text" id="set-qr-url" placeholder="https://...">
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--color-dark-green);">Contribution Configuration</h3>
+                <div class="form-group">
+                    <label for="set-min-amt">Minimum Amount (₹) — set 0 to welcome any amount</label>
+                    <input type="number" id="set-min-amt" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="set-max-amt">Maximum Amount (₹)</label>
+                    <input type="number" id="set-max-amt">
+                </div>
+                <div class="form-group">
+                    <label for="set-suggested-amt">Base Suggested Amount (₹)</label>
+                    <input type="number" id="set-suggested-amt">
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--color-dark-green);">Mood Check-in</h3>
+                <p style="font-size: 0.8rem; margin-bottom: 12px;">Set the wording, the fixed jump amount, and the upper limit for each mood — so a slider for "just tea" can't wander into Thali money. The guest can still slide freely within that segment's range.</p>
+
+                <div class="form-group">
+                    <label for="set-mood-label-white">🤍 Label</label>
+                    <input type="text" id="set-mood-label-white">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-amt-white">🤍 Jumps To (₹)</label>
+                    <input type="number" id="set-mood-amt-white" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-max-white">🤍 Upper Limit (₹)</label>
+                    <input type="number" id="set-mood-max-white" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="set-mood-label-green">💚 Label</label>
+                    <input type="text" id="set-mood-label-green">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-amt-green">💚 Jumps To (₹)</label>
+                    <input type="number" id="set-mood-amt-green" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-max-green">💚 Upper Limit (₹)</label>
+                    <input type="number" id="set-mood-max-green" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="set-mood-label-smiley">😊 Label</label>
+                    <input type="text" id="set-mood-label-smiley">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-amt-smiley">😊 Jumps To (₹)</label>
+                    <input type="number" id="set-mood-amt-smiley" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-max-smiley">😊 Upper Limit (₹)</label>
+                    <input type="number" id="set-mood-max-smiley" min="0">
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--color-dark-green);">Data Controls</h3>
+                <button id="btn-export-csv" class="btn btn-secondary" style="margin-top: 0; background: #FFF; border: 1px solid var(--color-dark-green);">📥 Export Contributions (CSV)</button>
+                <button id="btn-reset-data" class="btn btn-secondary" style="color: #C0392B; background: #FCE4D6;">⚠️ Reset App Records</button>
+            </div>
+
+            <button id="btn-save-settings" class="btn">Save Configuration</button>
+        </section>
+
+        <!-- BOTTOM TAB NAVIGATION -->
+        <nav class="bottom-nav" id="main-navigation">
+            <button class="nav-item active" data-target="screen-home">
+                <span class="nav-icon">🍳</span>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" data-target="screen-mystay">
+                <span class="nav-icon">🗓️</span>
+                <span>My Stay</span>
+            </button>
+            <button class="nav-item" data-target="screen-philosophy">
+                <span class="nav-icon">📖</span>
+                <span>Philosophy</span>
+            </button>
+            <button class="nav-item" data-target="screen-goodbye">
+                <span class="nav-icon">👋</span>
+                <span>Goodbye</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- --- APPLICATION JAVASCRIPT --- -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- CONFIGURATION & STORAGE DEFAULT OBJECTS ---
+            const DEFAULT_SETTINGS = {
+                minAmount: 50,
+                maxAmount: 2000,
+                suggestedAmount: 300,
+                hostName: "Host",
+                houseName: "Smiling Kitchen",
+                upiId: "",
+                qrUrl: "",
+                moodLabelWhite: "Chai & Kindness",
+                moodLabelGreen: "Dal-Roti Energy",
+                moodLabelSmiley: "Had a Pleasant Stay",
+                moodAmountWhite: 150,
+                moodAmountGreen: 450,
+                moodAmountSmiley: 800,
+                moodMaxWhite: 250,
+                moodMaxGreen: 700,
+                moodMaxSmiley: 2000
+            };
+
+            // --- APP STATE ---
+            let appSettings = JSON.parse(localStorage.getItem('sk_settings')) || { ...DEFAULT_SETTINGS };
+            let contributions = JSON.parse(localStorage.getItem('sk_contributions')) || [];
+            // Migrate older records (from before multiple-entries-per-day support) that lack a unique id/time
+            let neededMigration = false;
+            contributions.forEach(item => {
+                if (!item.id) {
+                    item.id = `${Date.parse(item.date) || Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                    item.time = item.time || `${item.date}T12:00:00.000Z`;
+                    neededMigration = true;
+                }
+            });
+            if (neededMigration) {
+                localStorage.setItem('sk_contributions', JSON.stringify(contributions));
+            }
+            let currentSelectedFeeling = "white"; 
+            let adminTapCount = 0;
+            let adminTapTimer;
+
+            // --- DOM ELEMENTS SELECTION ---
+            const screens = document.querySelectorAll('.screen');
+            const navItems = document.querySelectorAll('.nav-item');
+            const mainNavigation = document.getElementById('main-navigation');
+            const banner = document.getElementById('notification-banner');
+
+            // Slider & Display
+            const contributionSlider = document.getElementById('contribution-slider');
+            const smileAmountDisplay = document.getElementById('smile-amount-display');
+            const stemBar = document.getElementById('stem-bar');
+            const sliderCaption = document.getElementById('slider-caption');
+            const sliderMinLbl = document.getElementById('slider-min-lbl');
+            const sliderMaxLbl = document.getElementById('slider-max-lbl');
+
+            // Feelings Elements
+            const feelingCards = document.querySelectorAll('.feeling-card');
+
+            // Home Header Labels
+            const homeTitle = document.getElementById('home-title');
+            const homeGreeting = document.getElementById('home-greeting');
+
+            // --- VIEW SYSTEM NAVIGATION ---
+            // --- SCROLL POSITION INDICATOR ---
+            // A quiet cue that a screen has more content below the fold — many of this app's screens
+            // (Home with the mood cards + slider, My Stay with a long timeline) run taller than one
+            // phone screen, and there's otherwise nothing signalling "scroll for more."
+            const scrollTrack = document.getElementById('scroll-indicator-track');
+            const scrollThumb = document.getElementById('scroll-indicator-thumb');
+
+            function updateScrollIndicator() {
+                const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+                if (scrollableHeight <= 24) {
+                    scrollTrack.style.display = 'none';
+                    return;
+                }
+                scrollTrack.style.display = 'block';
+                const trackHeight = scrollTrack.clientHeight;
+                const viewportRatio = window.innerHeight / document.documentElement.scrollHeight;
+                const thumbHeight = Math.max(28, trackHeight * viewportRatio);
+                const progress = Math.min(1, Math.max(0, window.scrollY / scrollableHeight));
+
+                scrollThumb.style.height = `${thumbHeight}px`;
+                scrollThumb.style.top = `${progress * (trackHeight - thumbHeight)}px`;
+            }
+
+            window.addEventListener('scroll', updateScrollIndicator, { passive: true });
+            window.addEventListener('resize', updateScrollIndicator);
+
+            function navigateTo(screenId) {
+                screens.forEach(screen => {
+                    screen.classList.remove('active');
+                    if(screen.id === screenId) {
+                        screen.classList.add('active');
+                    }
+                });
+
+                // Style synchronization for standard menu items
+                navItems.forEach(item => {
+                    if(item.getAttribute('data-target') === screenId) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+
+                // Contextual logic executions depending on screen entries
+                if (screenId === 'screen-mystay') {
+                    renderMyStayTimeline();
+                } else if (screenId === 'screen-farewell') {
+                    renderFarewellDetails();
+                }
+
+                // Smooth scroll view context window to absolute top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // Recompute after the new screen's content has laid out
+                requestAnimationFrame(updateScrollIndicator);
+            }
+
+            // Tab bar configuration link event routing
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const target = item.getAttribute('data-target');
+                    navigateTo(target);
+                });
+            });
+
+            // --- BANNER ALERT SYSTEM ---
+            function showNotification(message) {
+                banner.innerText = message;
+                banner.classList.add('show');
+                setTimeout(() => {
+                    banner.classList.remove('show');
+                }, 3500);
+            }
+
+            // --- STEM SLIDER VISUAL ENGINE (shared soul: thin/pale -> thick/deep, one hue) ---
+            const STEM_THIN_COLOR = [207, 232, 217];   // pale mint, ₹0 / minimum
+            const STEM_THICK_COLOR = [31, 74, 52];     // deep forest green, generous
+            const STEM_MIN_HEIGHT = 4;   // px
+            const STEM_MAX_HEIGHT = 20;  // px
+
+            const STEM_CAPTIONS = [
+                { at: 0.0, text: "Every bit helps it grow 🌱" },
+                { at: 0.35, text: "The kitchen feels it 💚" },
+                { at: 0.7, text: "Spoiling the hosts today 😊" }
+            ];
+
+            function interpolateColor(c1, c2, t) {
+                const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
+                const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
+                const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+
+            function updateStemVisual(rawValue) {
+                const min = parseFloat(contributionSlider.min);
+                const max = parseFloat(contributionSlider.max);
+                const value = parseFloat(rawValue);
+                let percent = max > min ? (value - min) / (max - min) : 0;
+                percent = Math.max(0, Math.min(1, percent));
+
+                const thickness = STEM_MIN_HEIGHT + percent * (STEM_MAX_HEIGHT - STEM_MIN_HEIGHT);
+                stemBar.style.height = `${thickness}px`;
+                stemBar.style.background = interpolateColor(STEM_THIN_COLOR, STEM_THICK_COLOR, percent);
+
+                if (sliderCaption) {
+                    let caption = STEM_CAPTIONS[0].text;
+                    STEM_CAPTIONS.forEach(step => {
+                        if (percent >= step.at) caption = step.text;
+                    });
+                    sliderCaption.innerText = caption;
+                }
+            }
+
+            // --- LOCALIZATION & TEXT UPDATE ENGINE ---
+            function updateDynamicUIElements() {
+                // Header adjustments reflecting customized property identity parameters
+                homeTitle.innerText = appSettings.houseName;
+                homeGreeting.innerText = `Hi! How is the ${appSettings.houseName || 'kitchen'} smiling today?`;
+
+                // Mood card labels reflect the host's own wording
+                document.getElementById('label-white').innerText = appSettings.moodLabelWhite;
+                document.getElementById('label-green').innerText = appSettings.moodLabelGreen;
+                document.getElementById('label-smiley').innerText = appSettings.moodLabelSmiley;
+
+                // Apply the currently selected mood's own segment bounds (falls back to 'white' at boot)
+                applyMoodBounds(currentSelectedFeeling, false);
+            }
+
+            // --- FEELINGS ACTION CONTROLLERS ---
+            // Each mood grows the heart visually, jumps the slider to the host's fixed amount for that
+            // mood, AND caps the slider's own upper limit to that mood's segment — so "just tea" can't
+            // accidentally wander into Thali-money territory. The guest can still slide freely within it.
+            function getMoodAmount(mood) {
+                return {
+                    white: appSettings.moodAmountWhite,
+                    green: appSettings.moodAmountGreen,
+                    smiley: appSettings.moodAmountSmiley
+                }[mood] ?? appSettings.suggestedAmount;
+            }
+
+            function getMoodMax(mood) {
+                return {
+                    white: appSettings.moodMaxWhite,
+                    green: appSettings.moodMaxGreen,
+                    smiley: appSettings.moodMaxSmiley
+                }[mood] ?? appSettings.maxAmount;
+            }
+
+            function applyMoodBounds(mood, jumpToFixed) {
+                const segMin = appSettings.minAmount;
+                const segMax = Math.max(segMin, Math.min(getMoodMax(mood), appSettings.maxAmount));
+
+                contributionSlider.min = segMin;
+                contributionSlider.max = segMax;
+                sliderMinLbl.innerText = `₹${segMin}`;
+                sliderMaxLbl.innerText = `₹${segMax}`;
+
+                let value = jumpToFixed ? getMoodAmount(mood) : parseInt(contributionSlider.value);
+                if (isNaN(value)) value = getMoodAmount(mood);
+                value = Math.max(segMin, Math.min(segMax, value));
+
+                contributionSlider.value = value;
+                smileAmountDisplay.innerText = `₹${value}`;
+                updateStemVisual(value);
+            }
+
+            feelingCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    feelingCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    currentSelectedFeeling = card.getAttribute('data-feeling');
+                    applyMoodBounds(currentSelectedFeeling, true);
+                });
+            });
+
+            // Match continuous manual sliders configurations adjustments visually
+            contributionSlider.addEventListener('input', (e) => {
+                smileAmountDisplay.innerText = `₹${e.target.value}`;
+                updateStemVisual(e.target.value);
+            });
+
+            // --- DATA SUBMISSION CONTROLLER ---
+            document.getElementById('btn-submit-contribution').addEventListener('click', () => {
+                const amount = parseInt(contributionSlider.value);
+                const now = new Date();
+                const todayIsoStr = now.toISOString().split('T')[0]; // Calendar day key "YYYY-MM-DD"
+
+                // Feeling display mapping converter
+                let feelingEmoji = "🤍";
+                let feelingText = appSettings.moodLabelWhite;
+                if(currentSelectedFeeling === 'green') { feelingEmoji = "💚"; feelingText = appSettings.moodLabelGreen; }
+                if(currentSelectedFeeling === 'smiley') { feelingEmoji = "😊"; feelingText = appSettings.moodLabelSmiley; }
+
+                const alreadyHasEntryToday = contributions.some(item => item.date === todayIsoStr);
+
+                // Every submission is its own entry — a guest may have tea, then a meal, then another
+                // meal, all on the same day, and each one deserves its own record, not an overwrite.
+                contributions.push({
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    date: todayIsoStr,
+                    time: now.toISOString(),
+                    feeling: feelingText,
+                    emoji: feelingEmoji,
+                    amount: amount
+                });
+
+                showNotification(alreadyHasEntryToday ? "Another moment added to today! ❤️" : "Thank you for warming the kitchen today! ❤️");
+
+                localStorage.setItem('sk_contributions', JSON.stringify(contributions));
+                navigateTo('screen-mystay');
+            });
+
+            // --- TIMELINE VISUALIZER (MY STAY) ---
+            let editingId = null;
+
+            function renderMyStayTimeline() {
+                const container = document.getElementById('stay-timeline');
+                const totalDisplay = document.getElementById('stay-total-amount');
+                container.innerHTML = '';
+
+                if (contributions.length === 0) {
+                    container.innerHTML = `<p style="text-align:center; padding: 20px 0; color: var(--color-soft-brown);">No records present. Add your first day's feeling on the home menu.</p>`;
+                    totalDisplay.innerText = "₹0";
+                    return;
+                }
+
+                // Order items chronologically (falling back to date if no time recorded)
+                let sortedContributions = [...contributions].sort((a,b) => new Date(a.time || a.date) - new Date(b.time || b.date));
+
+                // Group entries under their calendar day — a guest may have several entries in one day
+                const dayGroups = [];
+                sortedContributions.forEach(item => {
+                    let group = dayGroups.find(g => g.date === item.date);
+                    if (!group) {
+                        group = { date: item.date, entries: [] };
+                        dayGroups.push(group);
+                    }
+                    group.entries.push(item);
+                });
+
+                let runningSum = 0;
+
+                dayGroups.forEach((group, dayIndex) => {
+                    const formattedDate = new Date(group.date).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                    });
+                    const daySubtotal = group.entries.reduce((s, e) => s + e.amount, 0);
+
+                    const header = document.createElement('div');
+                    header.className = 'timeline-day-header';
+                    header.innerHTML = `
+                        <span>${formattedDate} (Day ${dayIndex + 1})</span>
+                        ${group.entries.length > 1 ? `<span class="timeline-day-subtotal">₹${daySubtotal}</span>` : ''}
+                    `;
+                    container.appendChild(header);
+
+                    group.entries.forEach(item => {
+                        runningSum += item.amount;
+                        const timeLabel = item.time ? new Date(item.time).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : '';
+
+                        const element = document.createElement('div');
+                        element.className = 'timeline-item editable';
+                        element.innerHTML = `
+                            <div class="timeline-details">
+                                <span class="timeline-feeling">${item.emoji} ${item.feeling}</span>
+                                ${timeLabel ? `<span class="timeline-time">${timeLabel}</span>` : ''}
+                            </div>
+                            <span class="timeline-amount">₹${item.amount}</span>
+                        `;
+                        element.addEventListener('click', () => {
+                            editingId = (editingId === item.id) ? null : item.id;
+                            renderMyStayTimeline();
+                        });
+                        container.appendChild(element);
+
+                        if (editingId === item.id) {
+                            const panel = document.createElement('div');
+                            panel.className = 'timeline-edit-panel';
+                            panel.innerHTML = `
+                                <div class="edit-row">
+                                    <span>₹</span>
+                                    <input type="number" min="0" id="edit-amount-input" value="${item.amount}">
+                                </div>
+                                <div class="timeline-edit-actions">
+                                    <button class="btn-edit-cancel" id="edit-cancel-btn">Cancel</button>
+                                    <button class="btn-edit-delete" id="edit-delete-btn">🗑️ Remove</button>
+                                    <button class="btn-edit-save" id="edit-save-btn">💾 Save</button>
+                                </div>
+                            `;
+                            // Prevent the panel's own clicks from re-toggling the row above
+                            panel.addEventListener('click', (e) => e.stopPropagation());
+                            container.appendChild(panel);
+
+                            panel.querySelector('#edit-cancel-btn').addEventListener('click', () => {
+                                editingId = null;
+                                renderMyStayTimeline();
+                            });
+
+                            panel.querySelector('#edit-delete-btn').addEventListener('click', () => {
+                                contributions = contributions.filter(c => c.id !== item.id);
+                                localStorage.setItem('sk_contributions', JSON.stringify(contributions));
+                                editingId = null;
+                                showNotification("Entry removed.");
+                                renderMyStayTimeline();
+                            });
+
+                            panel.querySelector('#edit-save-btn').addEventListener('click', () => {
+                                const input = panel.querySelector('#edit-amount-input');
+                                const newAmount = parseInt(input.value);
+                                if (isNaN(newAmount) || newAmount < 0) {
+                                    showNotification("Please enter a valid amount.");
+                                    return;
+                                }
+                                item.amount = newAmount;
+                                localStorage.setItem('sk_contributions', JSON.stringify(contributions));
+                                editingId = null;
+                                showNotification("Updated. ✨");
+                                renderMyStayTimeline();
+                            });
+                        }
+                    });
+                });
+
+                totalDisplay.innerText = `₹${runningSum}`;
+            }
+
+            // --- GOODBYE FLOW CONTROLLER ROUTING ---
+            document.getElementById('btn-goodbye-continue').addEventListener('click', () => {
+                mainNavigation.style.display = 'none'; // Hide application shell frames
+                navigateTo('screen-farewell');
+            });
+
+            document.getElementById('btn-goodbye-cancel').addEventListener('click', () => {
+                navigateTo('screen-home');
+            });
+
+            document.getElementById('btn-farewell-back').addEventListener('click', () => {
+                mainNavigation.style.display = 'grid';
+                navigateTo('screen-goodbye');
+            });
+
+            // --- FAREWELL COMPONENT SETUP ENGINE ---
+            function renderFarewellDetails() {
+                const totalSum = contributions.reduce((sum, item) => sum + item.amount, 0);
+                const distinctDayCount = new Set(contributions.map(item => item.date)).size || 1;
+                const contextualAverage = Math.round(totalSum / distinctDayCount);
+
+                document.getElementById('farewell-days').innerText = distinctDayCount;
+                document.getElementById('farewell-total').innerText = `₹${totalSum}`;
+                document.getElementById('farewell-avg').innerText = `₹${contextualAverage}`;
+
+                // Payment configuration displays setup
+                const qrImg = document.getElementById('host-qr-display');
+                const qrFallback = document.getElementById('farewell-qr-fallback');
+                const upiText = document.getElementById('host-upi-display');
+                const saveQrBtn = document.getElementById('btn-save-qr');
+
+                if (appSettings.qrUrl) {
+                    qrImg.src = appSettings.qrUrl;
+                    qrImg.style.display = 'block';
+                    qrFallback.style.display = 'none';
+                    saveQrBtn.href = appSettings.qrUrl;
+                    saveQrBtn.style.display = 'block';
+                } else {
+                    qrImg.removeAttribute('src');
+                    qrImg.style.display = 'none';
+                    qrFallback.style.display = 'block';
+                    saveQrBtn.style.display = 'none';
+                }
+
+                upiText.innerText = appSettings.upiId ? `UPI ID: ${appSettings.upiId}` : '';
+            }
+
+            // --- COMPLETION ACTION ROUTES ---
+            document.getElementById('btn-complete-payment').addEventListener('click', () => {
+                navigateTo('screen-thankyou');
+            });
+
+            document.getElementById('btn-final-restart').addEventListener('click', () => {
+                mainNavigation.style.display = 'grid'; // Recover layout wrapper components
+                navigateTo('screen-home');
+            });
+
+            // --- HOST BACKDOOR SETTINGS INTERACTION (TRIPLE TAP ON FOLDED HANDS) ---
+            const adminTrigger = document.getElementById('admin-trigger');
+
+            // Safe QR error handling — falls back to the text hint WITHOUT removing the <img> from
+            // the DOM, so a later valid src assignment can still find and use the element.
+            document.getElementById('host-qr-display').addEventListener('error', function() {
+                this.style.display = 'none';
+                document.getElementById('farewell-qr-fallback').style.display = 'block';
+                document.getElementById('btn-save-qr').style.display = 'none';
+            });
+
+            const qrUploadInput = document.getElementById('set-qr-upload');
+            const qrPreviewWrap = document.getElementById('qr-preview-wrap');
+            const qrPreviewImg = document.getElementById('qr-preview-img');
+            const btnClearQr = document.getElementById('btn-clear-qr');
+
+            function refreshQrPreview() {
+                if (appSettings.qrUrl) {
+                    qrPreviewImg.src = appSettings.qrUrl;
+                    qrPreviewWrap.style.display = 'block';
+                } else {
+                    qrPreviewWrap.style.display = 'none';
+                }
+            }
+
+            function unlockHostSettings() {
+                // Pull values live into management display fields
+                document.getElementById('set-host-name').value = appSettings.hostName;
+                document.getElementById('set-house-name').value = appSettings.houseName;
+                document.getElementById('set-upi-id').value = appSettings.upiId;
+                document.getElementById('set-qr-url').value = appSettings.qrUrl && appSettings.qrUrl.startsWith('data:') ? '' : appSettings.qrUrl;
+                document.getElementById('set-min-amt').value = appSettings.minAmount;
+                document.getElementById('set-max-amt').value = appSettings.maxAmount;
+                document.getElementById('set-suggested-amt').value = appSettings.suggestedAmount;
+                document.getElementById('set-mood-label-white').value = appSettings.moodLabelWhite;
+                document.getElementById('set-mood-amt-white').value = appSettings.moodAmountWhite;
+                document.getElementById('set-mood-max-white').value = appSettings.moodMaxWhite;
+                document.getElementById('set-mood-label-green').value = appSettings.moodLabelGreen;
+                document.getElementById('set-mood-amt-green').value = appSettings.moodAmountGreen;
+                document.getElementById('set-mood-max-green').value = appSettings.moodMaxGreen;
+                document.getElementById('set-mood-label-smiley').value = appSettings.moodLabelSmiley;
+                document.getElementById('set-mood-amt-smiley').value = appSettings.moodAmountSmiley;
+                document.getElementById('set-mood-max-smiley').value = appSettings.moodMaxSmiley;
+                refreshQrPreview();
+
+                mainNavigation.style.display = 'none';
+                navigateTo('screen-settings');
+                showNotification("Host workspace unlocked 🔑");
+            }
+
+            adminTrigger.addEventListener('click', () => {
+                adminTapCount += 1;
+                clearTimeout(adminTapTimer);
+                if (adminTapCount >= 3) {
+                    adminTapCount = 0;
+                    unlockHostSettings();
+                    return;
+                }
+                adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 2000);
+            });
+
+            // Host uploads a photo/screenshot of their own QR — stored as base64, no backend needed
+            // Caps a phone photo to a sane max dimension in one draw step — a QR only needs to be
+            // sharp, not full camera resolution, and this keeps localStorage small (same technique
+            // used for the Identity Decoder / canteen POS photo handling).
+            const QR_UPLOAD_MAX_DIM = 800;
+            function canvasFromImageCapped(img, maxDim) {
+                const nw = img.naturalWidth || img.width;
+                const nh = img.naturalHeight || img.height;
+                let w = nw, h = nh;
+                if (Math.max(w, h) > maxDim) {
+                    const scale = maxDim / Math.max(w, h);
+                    w = Math.round(w * scale);
+                    h = Math.round(h * scale);
+                }
+                const c = document.createElement('canvas');
+                c.width = w; c.height = h;
+                c.getContext('2d').drawImage(img, 0, 0, nw, nh, 0, 0, w, h);
+                return c;
+            }
+
+            qrUploadInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = canvasFromImageCapped(img, QR_UPLOAD_MAX_DIM);
+                        appSettings.qrUrl = canvas.toDataURL('image/png');
+                        document.getElementById('set-qr-url').value = '';
+                        refreshQrPreview();
+                    };
+                    img.onerror = () => showNotification("Couldn't read that image — try another photo.");
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            btnClearQr.addEventListener('click', () => {
+                appSettings.qrUrl = '';
+                qrUploadInput.value = '';
+                refreshQrPreview();
+            });
+
+            // If host pastes a URL, prefer it over any uploaded image for the live preview
+            document.getElementById('set-qr-url').addEventListener('input', (e) => {
+                if (e.target.value.trim()) {
+                    appSettings.qrUrl = e.target.value.trim();
+                    refreshQrPreview();
+                }
+            });
+
+            // Return path routing configuration elements from settings view
+            document.getElementById('btn-settings-back').addEventListener('click', () => {
+                mainNavigation.style.display = 'grid';
+                navigateTo('screen-home');
+            });
+
+            // --- SAVE SETTINGS LOGIC ---
+            document.getElementById('btn-save-settings').addEventListener('click', () => {
+                appSettings.hostName = document.getElementById('set-host-name').value;
+                appSettings.houseName = document.getElementById('set-house-name').value;
+                appSettings.upiId = document.getElementById('set-upi-id').value;
+                const pastedUrl = document.getElementById('set-qr-url').value.trim();
+                if (pastedUrl) {
+                    appSettings.qrUrl = pastedUrl;
+                }
+                // else: keep whatever was set live by the upload/clear handlers
+                appSettings.minAmount = parseInt(document.getElementById('set-min-amt').value) || 0;
+                appSettings.maxAmount = parseInt(document.getElementById('set-max-amt').value) || 2000;
+                appSettings.suggestedAmount = parseInt(document.getElementById('set-suggested-amt').value) || 300;
+                appSettings.moodLabelWhite = document.getElementById('set-mood-label-white').value || "Chai & Kindness";
+                appSettings.moodAmountWhite = parseInt(document.getElementById('set-mood-amt-white').value) || 0;
+                appSettings.moodMaxWhite = parseInt(document.getElementById('set-mood-max-white').value) || appSettings.maxAmount;
+                appSettings.moodLabelGreen = document.getElementById('set-mood-label-green').value || "Dal-Roti Energy";
+                appSettings.moodAmountGreen = parseInt(document.getElementById('set-mood-amt-green').value) || 0;
+                appSettings.moodMaxGreen = parseInt(document.getElementById('set-mood-max-green').value) || appSettings.maxAmount;
+                appSettings.moodLabelSmiley = document.getElementById('set-mood-label-smiley').value || "Had a Pleasant Stay";
+                appSettings.moodAmountSmiley = parseInt(document.getElementById('set-mood-amt-smiley').value) || 0;
+                appSettings.moodMaxSmiley = parseInt(document.getElementById('set-mood-max-smiley').value) || appSettings.maxAmount;
+
+                localStorage.setItem('sk_settings', JSON.stringify(appSettings));
+                updateDynamicUIElements();
+                
+                mainNavigation.style.display = 'grid';
+                navigateTo('screen-home');
+                showNotification("Settings saved successfully.");
+            });
+
+            // --- DATA EXPORT TO CSV CAPABILITY ---
+            document.getElementById('btn-export-csv').addEventListener('click', () => {
+                if(contributions.length === 0) {
+                    showNotification("No analytical logging data recorded yet to export.");
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Date,Time,Feeling,Contribution,Running Total\n";
+
+                let runningTotal = 0;
+                let sortedExport = [...contributions].sort((a,b) => new Date(a.time || a.date) - new Date(b.time || b.date));
+
+                sortedExport.forEach(item => {
+                    runningTotal += item.amount;
+                    const timeStr = item.time ? new Date(item.time).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : '';
+                    csvContent += `"${item.date}","${timeStr}","${item.feeling}",${item.amount},${runningTotal}\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const downloadLink = document.createElement("a");
+                downloadLink.setAttribute("href", encodedUri);
+                downloadLink.setAttribute("download", `smiling_kitchen_gratitude_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(downloadLink);
+                
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            });
+
+            // --- SYSTEM DESTRUCTION ACTION ROUTE ---
+            document.getElementById('btn-reset-data').addEventListener('click', () => {
+                if(confirm("Are you absolutely sure you want to clear all recorded gratitude history entries? This cannot be undone.")) {
+                    localStorage.removeItem('sk_contributions');
+                    contributions = [];
+                    showNotification("All database transaction logs purged.");
+                    renderMyStayTimeline();
+                }
+            });
+
+            // --- RUN INITIALIZATION ROUTINES ---
+            // Force primary start parameters configuration
+            feelingCards[0].classList.add('active'); 
+            contributionSlider.value = appSettings.suggestedAmount;
+            
+            updateDynamicUIElements();
+            requestAnimationFrame(updateScrollIndicator);
+        });
+    </script>
+</body>
+</html>
