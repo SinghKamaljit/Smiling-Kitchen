@@ -770,31 +770,19 @@
             </div>
 
             <div class="card">
-                <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--color-dark-green);">Contribution Configuration</h3>
-                <div class="form-group">
-                    <label for="set-min-amt">Minimum Amount (₹) — set 0 to welcome any amount</label>
-                    <input type="number" id="set-min-amt" min="0">
-                </div>
-                <div class="form-group">
-                    <label for="set-max-amt">Maximum Amount (₹)</label>
-                    <input type="number" id="set-max-amt">
-                </div>
-                <div class="form-group">
-                    <label for="set-suggested-amt">Base Suggested Amount (₹)</label>
-                    <input type="number" id="set-suggested-amt">
-                </div>
-            </div>
-
-            <div class="card">
                 <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--color-dark-green);">Mood Check-in</h3>
-                <p style="font-size: 0.8rem; margin-bottom: 12px;">Set the wording, the fixed jump amount, and the upper limit for each mood — so a slider for "just tea" can't wander into Thali money. The guest can still slide freely within that segment's range.</p>
+                <p style="font-size: 0.8rem; margin-bottom: 12px;">Each mood is its own self-contained range — a lower limit, a default jump amount, and an upper limit. They never affect each other, so "just tea" can't wander into Thali money, and a low tea floor won't quietly become the Thali floor too.</p>
 
                 <div class="form-group">
                     <label for="set-mood-label-white">🤍 Label</label>
                     <input type="text" id="set-mood-label-white">
                 </div>
                 <div class="form-group">
-                    <label for="set-mood-amt-white">🤍 Jumps To (₹)</label>
+                    <label for="set-mood-min-white">🤍 Lower Limit (₹)</label>
+                    <input type="number" id="set-mood-min-white" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-amt-white">🤍 Default (₹)</label>
                     <input type="number" id="set-mood-amt-white" min="0">
                 </div>
                 <div class="form-group">
@@ -807,7 +795,11 @@
                     <input type="text" id="set-mood-label-green">
                 </div>
                 <div class="form-group">
-                    <label for="set-mood-amt-green">💚 Jumps To (₹)</label>
+                    <label for="set-mood-min-green">💚 Lower Limit (₹)</label>
+                    <input type="number" id="set-mood-min-green" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-amt-green">💚 Default (₹)</label>
                     <input type="number" id="set-mood-amt-green" min="0">
                 </div>
                 <div class="form-group">
@@ -820,7 +812,11 @@
                     <input type="text" id="set-mood-label-smiley">
                 </div>
                 <div class="form-group">
-                    <label for="set-mood-amt-smiley">😊 Jumps To (₹)</label>
+                    <label for="set-mood-min-smiley">😊 Lower Limit (₹)</label>
+                    <input type="number" id="set-mood-min-smiley" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="set-mood-amt-smiley">😊 Default (₹)</label>
                     <input type="number" id="set-mood-amt-smiley" min="0">
                 </div>
                 <div class="form-group">
@@ -872,9 +868,6 @@
 
             // --- CONFIGURATION & STORAGE DEFAULT OBJECTS ---
             const DEFAULT_SETTINGS = {
-                minAmount: 50,
-                maxAmount: 2000,
-                suggestedAmount: 300,
                 hostName: "Host",
                 houseName: "Smiling Kitchen",
                 upiId: "",
@@ -882,11 +875,14 @@
                 moodLabelWhite: "Chai & Kindness",
                 moodLabelGreen: "Dal-Roti Energy",
                 moodLabelSmiley: "Had a Pleasant Stay",
+                moodMinWhite: 50,
                 moodAmountWhite: 150,
-                moodAmountGreen: 450,
-                moodAmountSmiley: 800,
                 moodMaxWhite: 250,
+                moodMinGreen: 200,
+                moodAmountGreen: 450,
                 moodMaxGreen: 700,
+                moodMinSmiley: 400,
+                moodAmountSmiley: 800,
                 moodMaxSmiley: 2000
             };
 
@@ -1088,12 +1084,20 @@
             // Each mood grows the heart visually, jumps the slider to the host's fixed amount for that
             // mood, AND caps the slider's own upper limit to that mood's segment — so "just tea" can't
             // accidentally wander into Thali-money territory. The guest can still slide freely within it.
+            function getMoodMin(mood) {
+                return {
+                    white: appSettings.moodMinWhite,
+                    green: appSettings.moodMinGreen,
+                    smiley: appSettings.moodMinSmiley
+                }[mood] ?? 0;
+            }
+
             function getMoodAmount(mood) {
                 return {
                     white: appSettings.moodAmountWhite,
                     green: appSettings.moodAmountGreen,
                     smiley: appSettings.moodAmountSmiley
-                }[mood] ?? appSettings.suggestedAmount;
+                }[mood] ?? getMoodMin(mood);
             }
 
             function getMoodMax(mood) {
@@ -1101,12 +1105,12 @@
                     white: appSettings.moodMaxWhite,
                     green: appSettings.moodMaxGreen,
                     smiley: appSettings.moodMaxSmiley
-                }[mood] ?? appSettings.maxAmount;
+                }[mood] ?? Math.max(getMoodAmount(mood), getMoodMin(mood));
             }
 
             function applyMoodBounds(mood, jumpToFixed) {
-                const segMin = appSettings.minAmount;
-                const segMax = Math.max(segMin, Math.min(getMoodMax(mood), appSettings.maxAmount));
+                const segMin = getMoodMin(mood);
+                const segMax = Math.max(segMin, getMoodMax(mood));
 
                 contributionSlider.min = segMin;
                 contributionSlider.max = segMax;
@@ -1370,16 +1374,16 @@
                 document.getElementById('set-house-name').value = appSettings.houseName;
                 document.getElementById('set-upi-id').value = appSettings.upiId;
                 document.getElementById('set-qr-url').value = appSettings.qrUrl && appSettings.qrUrl.startsWith('data:') ? '' : appSettings.qrUrl;
-                document.getElementById('set-min-amt').value = appSettings.minAmount;
-                document.getElementById('set-max-amt').value = appSettings.maxAmount;
-                document.getElementById('set-suggested-amt').value = appSettings.suggestedAmount;
                 document.getElementById('set-mood-label-white').value = appSettings.moodLabelWhite;
+                document.getElementById('set-mood-min-white').value = appSettings.moodMinWhite;
                 document.getElementById('set-mood-amt-white').value = appSettings.moodAmountWhite;
                 document.getElementById('set-mood-max-white').value = appSettings.moodMaxWhite;
                 document.getElementById('set-mood-label-green').value = appSettings.moodLabelGreen;
+                document.getElementById('set-mood-min-green').value = appSettings.moodMinGreen;
                 document.getElementById('set-mood-amt-green').value = appSettings.moodAmountGreen;
                 document.getElementById('set-mood-max-green').value = appSettings.moodMaxGreen;
                 document.getElementById('set-mood-label-smiley').value = appSettings.moodLabelSmiley;
+                document.getElementById('set-mood-min-smiley').value = appSettings.moodMinSmiley;
                 document.getElementById('set-mood-amt-smiley').value = appSettings.moodAmountSmiley;
                 document.getElementById('set-mood-max-smiley').value = appSettings.moodMaxSmiley;
                 refreshQrPreview();
@@ -1468,18 +1472,18 @@
                     appSettings.qrUrl = pastedUrl;
                 }
                 // else: keep whatever was set live by the upload/clear handlers
-                appSettings.minAmount = parseInt(document.getElementById('set-min-amt').value) || 0;
-                appSettings.maxAmount = parseInt(document.getElementById('set-max-amt').value) || 2000;
-                appSettings.suggestedAmount = parseInt(document.getElementById('set-suggested-amt').value) || 300;
                 appSettings.moodLabelWhite = document.getElementById('set-mood-label-white').value || "Chai & Kindness";
-                appSettings.moodAmountWhite = parseInt(document.getElementById('set-mood-amt-white').value) || 0;
-                appSettings.moodMaxWhite = parseInt(document.getElementById('set-mood-max-white').value) || appSettings.maxAmount;
+                appSettings.moodMinWhite = parseInt(document.getElementById('set-mood-min-white').value) || 0;
+                appSettings.moodAmountWhite = parseInt(document.getElementById('set-mood-amt-white').value) || appSettings.moodMinWhite;
+                appSettings.moodMaxWhite = parseInt(document.getElementById('set-mood-max-white').value) || appSettings.moodAmountWhite;
                 appSettings.moodLabelGreen = document.getElementById('set-mood-label-green').value || "Dal-Roti Energy";
-                appSettings.moodAmountGreen = parseInt(document.getElementById('set-mood-amt-green').value) || 0;
-                appSettings.moodMaxGreen = parseInt(document.getElementById('set-mood-max-green').value) || appSettings.maxAmount;
+                appSettings.moodMinGreen = parseInt(document.getElementById('set-mood-min-green').value) || 0;
+                appSettings.moodAmountGreen = parseInt(document.getElementById('set-mood-amt-green').value) || appSettings.moodMinGreen;
+                appSettings.moodMaxGreen = parseInt(document.getElementById('set-mood-max-green').value) || appSettings.moodAmountGreen;
                 appSettings.moodLabelSmiley = document.getElementById('set-mood-label-smiley').value || "Had a Pleasant Stay";
-                appSettings.moodAmountSmiley = parseInt(document.getElementById('set-mood-amt-smiley').value) || 0;
-                appSettings.moodMaxSmiley = parseInt(document.getElementById('set-mood-max-smiley').value) || appSettings.maxAmount;
+                appSettings.moodMinSmiley = parseInt(document.getElementById('set-mood-min-smiley').value) || 0;
+                appSettings.moodAmountSmiley = parseInt(document.getElementById('set-mood-amt-smiley').value) || appSettings.moodMinSmiley;
+                appSettings.moodMaxSmiley = parseInt(document.getElementById('set-mood-max-smiley').value) || appSettings.moodAmountSmiley;
 
                 // Save a local draft so THIS device previews the change immediately
                 localStorage.setItem('sk_settings_draft', JSON.stringify(appSettings));
@@ -1551,7 +1555,7 @@
             // --- RUN INITIALIZATION ROUTINES ---
             // Force primary start parameters configuration
             feelingCards[0].classList.add('active'); 
-            contributionSlider.value = appSettings.suggestedAmount;
+            applyMoodBounds(currentSelectedFeeling, true);
             
             updateDynamicUIElements();
             requestAnimationFrame(updateScrollIndicator);
