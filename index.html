@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Smiling Kitchen</title>
+    <link rel="manifest" href="Smiling_Kitchen.manifest.json">
+    <meta name="theme-color" content="#2C5E43">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Smiling Kitchen">
+    <link rel="apple-touch-icon" href="Smiling_Kitchen-icon-192.png">
+    <link rel="icon" href="Smiling_Kitchen-icon-192.png">
     <style>
         /* --- DESIGN SYSTEM & CSS VARIABLES --- */
         :root {
@@ -823,12 +830,18 @@
             </div>
 
             <div class="card">
+                <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--color-dark-green);">Publishing Your Changes</h3>
+                <p style="font-size: 0.8rem; margin-bottom: 12px;">"Save & Download" saves a preview on this device AND downloads a config file. Upload that file to GitHub (replacing the old one) so every guest — on any phone — sees your changes, not just this device.</p>
+                <button id="btn-clear-preview" class="btn btn-secondary" style="margin-top: 0; font-size: 0.85rem;">↺ Clear My Preview (see published version)</button>
+            </div>
+
+            <div class="card">
                 <h3 style="font-size: 1rem; margin-bottom: 12px; color: var(--color-dark-green);">Data Controls</h3>
                 <button id="btn-export-csv" class="btn btn-secondary" style="margin-top: 0; background: #FFF; border: 1px solid var(--color-dark-green);">📥 Export Contributions (CSV)</button>
                 <button id="btn-reset-data" class="btn btn-secondary" style="color: #C0392B; background: #FCE4D6;">⚠️ Reset App Records</button>
             </div>
 
-            <button id="btn-save-settings" class="btn">Save Configuration</button>
+            <button id="btn-save-settings" class="btn">💾 Save & Download Config</button>
         </section>
 
         <!-- BOTTOM TAB NAVIGATION -->
@@ -855,7 +868,7 @@
 
     <!-- --- APPLICATION JAVASCRIPT --- -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
 
             // --- CONFIGURATION & STORAGE DEFAULT OBJECTS ---
             const DEFAULT_SETTINGS = {
@@ -878,7 +891,32 @@
             };
 
             // --- APP STATE ---
-            let appSettings = JSON.parse(localStorage.getItem('sk_settings')) || { ...DEFAULT_SETTINGS };
+            // Settings now come from a published config.json sitting next to this file on GitHub —
+            // that's the ONE source of truth every guest's phone sees, since localStorage never
+            // leaves the device that saved it. A host previewing unpublished edits on their OWN
+            // device sees a local "draft" layered on top; guests never have a draft, so they always
+            // see exactly what's published.
+            let appSettings = { ...DEFAULT_SETTINGS };
+
+            async function loadPublishedConfig() {
+                try {
+                    const res = await fetch('./Smiling_Kitchen.config.json', { cache: 'no-store' });
+                    if (res.ok) {
+                        const data = await res.json();
+                        localStorage.setItem('sk_config_cache', JSON.stringify(data));
+                        return data;
+                    }
+                } catch (e) { /* offline, or config.json not deployed yet — fall through */ }
+                const cached = localStorage.getItem('sk_config_cache');
+                return cached ? JSON.parse(cached) : null;
+            }
+
+            const publishedConfig = await loadPublishedConfig();
+            if (publishedConfig) Object.assign(appSettings, publishedConfig);
+
+            const localDraft = JSON.parse(localStorage.getItem('sk_settings_draft') || 'null');
+            if (localDraft) Object.assign(appSettings, localDraft);
+
             let contributions = JSON.parse(localStorage.getItem('sk_contributions')) || [];
             // Migrate older records (from before multiple-entries-per-day support) that lack a unique id/time
             let neededMigration = false;
@@ -1443,12 +1481,32 @@
                 appSettings.moodAmountSmiley = parseInt(document.getElementById('set-mood-amt-smiley').value) || 0;
                 appSettings.moodMaxSmiley = parseInt(document.getElementById('set-mood-max-smiley').value) || appSettings.maxAmount;
 
-                localStorage.setItem('sk_settings', JSON.stringify(appSettings));
+                // Save a local draft so THIS device previews the change immediately
+                localStorage.setItem('sk_settings_draft', JSON.stringify(appSettings));
+
+                // Download the same data as a config.json a host can upload to GitHub to publish
+                // it for every guest, on any device — localStorage alone can never reach them.
+                const configBlob = new Blob([JSON.stringify(appSettings, null, 2)], { type: 'application/json' });
+                const configUrl = URL.createObjectURL(configBlob);
+                const configLink = document.createElement('a');
+                configLink.href = configUrl;
+                configLink.download = 'Smiling_Kitchen.config.json';
+                document.body.appendChild(configLink);
+                configLink.click();
+                document.body.removeChild(configLink);
+                URL.revokeObjectURL(configUrl);
+
                 updateDynamicUIElements();
-                
+
                 mainNavigation.style.display = 'grid';
                 navigateTo('screen-home');
-                showNotification("Settings saved successfully.");
+                showNotification("Previewing on this device. Upload the downloaded file to GitHub to publish it for guests. 📤");
+            });
+
+            document.getElementById('btn-clear-preview').addEventListener('click', () => {
+                localStorage.removeItem('sk_settings_draft');
+                showNotification("Preview cleared — reloading to show the published version...");
+                setTimeout(() => location.reload(), 900);
             });
 
             // --- DATA EXPORT TO CSV CAPABILITY ---
@@ -1498,6 +1556,15 @@
             updateDynamicUIElements();
             requestAnimationFrame(updateScrollIndicator);
         });
+
+        // --- PWA SERVICE WORKER REGISTRATION ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./Smiling_Kitchen.sw.js').catch(() => {
+                    // Registration can fail on file:// or unsupported hosts — the app still works fully online
+                });
+            });
+        }
     </script>
 </body>
 </html>

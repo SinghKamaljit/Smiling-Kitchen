@@ -1,0 +1,18 @@
+{
+  "minAmount": 50,
+  "maxAmount": 2000,
+  "suggestedAmount": 300,
+  "hostName": "Host",
+  "houseName": "Smiling Kitchen",
+  "upiId": "",
+  "qrUrl": "",
+  "moodLabelWhite": "Chai & Kindness",
+  "moodLabelGreen": "Dal-Roti Energy",
+  "moodLabelSmiley": "Had a Pleasant Stay",
+  "moodAmountWhite": 150,
+  "moodAmountGreen": 450,
+  "moodAmountSmiley": 800,
+  "moodMaxWhite": 250,
+  "moodMaxGreen": 700,
+  "moodMaxSmiley": 2000
+}
