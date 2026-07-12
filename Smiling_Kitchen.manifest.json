@@ -2,7 +2,7 @@
   "name": "Smiling Kitchen",
   "short_name": "Sm. Kitchen",
   "description": "A warm, dignity-first way for guests to contribute to the household during their stay.",
-  "start_url": "./Smiling_Kitchen.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

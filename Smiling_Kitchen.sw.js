@@ -1,6 +1,6 @@
 const CACHE_NAME = 'smiling-kitchen-v1';
 const APP_SHELL = [
-    './Smiling_Kitchen.html',
+    './',
     './Smiling_Kitchen.manifest.json',
     './Smiling_Kitchen-icon-192.png',
     './Smiling_Kitchen-icon-512.png'
